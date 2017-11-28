@@ -15,27 +15,27 @@
 
 MODULE_LICENSE("Dual BSD/GPL");
 
-/* CODIGO DE SYNCREAD_IMPL.C*/
+/* CODIGO DE disco_IMPL.C*/
 
-int syncread_open(struct inode *inode, struct file *filp);
-int syncread_release(struct inode *inode, struct file *filp);
-ssize_t syncread_read(struct file *filp, char *buf, size_t count, loff_t *f_pos);
-ssize_t syncread_write(struct file *filp, const char *buf, size_t count, loff_t *f_pos);
-void syncread_exit(void);
-int syncread_init(void);
+int disco_open(struct inode *inode, struct file *filp);
+int disco_release(struct inode *inode, struct file *filp);
+ssize_t disco_read(struct file *filp, char *buf, size_t count, loff_t *f_pos);
+ssize_t disco_write(struct file *filp, const char *buf, size_t count, loff_t *f_pos);
+void disco_exit(void);
+int disco_init(void);
 
 /* Structure that declares the usual file */
 /* access functions */
-struct file_operations syncread_fops = {
-  read: syncread_read,
-  write: syncread_write,
-  open: syncread_open,
-  release: syncread_release
+struct file_operations disco_fops = {
+  read: disco_read,
+  write: disco_write,
+  open: disco_open,
+  release: disco_release
 };
 
 /* Declaration of the init and exit functions */
-module_init(syncread_init);
-module_exit(syncread_exit);
+module_init(disco_init);
+module_exit(disco_exit);
 
 /*** El driver para lecturas sincronas *************************************/
 
@@ -44,29 +44,29 @@ module_exit(syncread_exit);
 
 /* Global variables of the driver */
 
-int syncread_major = 61;     /* Major number */
+int disco_major = 61;     /* Major number */
 
 /* Buffer to store data */
 #define MAX_SIZE 8192
 
-static char *syncread_buffer;
+static char *disco_buffer;
 static ssize_t curr_size;
 static int readers;
 static int writing;
 static int pend_open_write;
 
-/* El mutex y la condicion para syncread */
+/* El mutex y la condicion para disco */
 static KMutex mutex;
 static KCondition cond;
 
-int syncread_init(void) {
+int disco_init(void) {
   int rc;
 
   /* Registering device */
-  rc = register_chrdev(syncread_major, "syncread", &syncread_fops);
+  rc = register_chrdev(disco_major, "disco", &disco_fops);
   if (rc < 0) {
     printk(
-      "<1>syncread: cannot obtain major number %d\n", syncread_major);
+      "<1>disco: cannot obtain major number %d\n", disco_major);
     return rc;
   }
 
@@ -77,31 +77,31 @@ int syncread_init(void) {
   m_init(&mutex);
   c_init(&cond);
 
-  /* Allocating syncread_buffer */
-  syncread_buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
-  if (syncread_buffer==NULL) {
-    syncread_exit();
+  /* Allocating disco_buffer */
+  disco_buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
+  if (disco_buffer==NULL) {
+    disco_exit();
     return -ENOMEM;
   }
-  memset(syncread_buffer, 0, MAX_SIZE);
+  memset(disco_buffer, 0, MAX_SIZE);
 
-  printk("<1>Inserting syncread module\n");
+  printk("<1>Inserting disco module\n");
   return 0;
 }
 
-void syncread_exit(void) {
+void disco_exit(void) {
   /* Freeing the major number */
-  unregister_chrdev(syncread_major, "syncread");
+  unregister_chrdev(disco_major, "disco");
 
-  /* Freeing buffer syncread */
-  if (syncread_buffer) {
-    kfree(syncread_buffer);
+  /* Freeing buffer disco */
+  if (disco_buffer) {
+    kfree(disco_buffer);
   }
 
-  printk("<1>Removing syncread module\n");
+  printk("<1>Removing disco module\n");
 }
 
-int syncread_open(struct inode *inode, struct file *filp) {
+int disco_open(struct inode *inode, struct file *filp) {
   int rc= 0;
   m_lock(&mutex);
 
@@ -145,7 +145,64 @@ epilog:
   return rc;
 }
 
-int syncread_release(struct inode *inode, struct file *filp) {
+
+/*
+#define FALSE 0
+#define TRUE 1
+
+typedef struct nodo {
+    char *nombre, *pareja;
+    int listo;
+    struct nodo *prox;
+} Nodo;
+
+Nodo *hombres = NULL;
+Nodo *mujeres = NULL;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+
+void emparejar(char sexo, char *nombre, char *pareja)
+{
+    Nodo nodo;
+    nodo.nombre = nombre;
+    nodo.pareja = pareja;
+    nodo.listo = FALSE;
+
+    pthread_mutex_lock(&mutex);
+    if (sexo == 'm') { // caso hombre
+        if (mujeres != NULL) { // hay una mujer esperando?
+            strcpy(pareja, mujeres->nombre);
+            strcpy(mujeres->pareja, nombre);
+            mujeres->listo = TRUE;   // desbloqueamos a la mujer
+            mujeres = mujeres->prox; // y la sacamos de la lista
+        }
+        else { /* no hay mujeres esperando
+            nodo.prox = hombres; // se agrega a la lista de hombres
+            hombres = &nodo;     // en espera
+            while (!nodo.listo) // esperar una mujer cambiara nodo.listo
+                pthread_cond_wait(&cond, &mutex);
+        }
+    }
+    else { //caso mujer
+        if (hombres != NULL) {
+            strcpy(pareja, hombres->nombre);
+            strcpy(hombres->pareja, nombre);
+            hombres->listo= TRUE;
+            hombres= hombres->next;
+        }
+        else {
+            nodo.next = mujeres;
+            mujeres = &nodo;
+            while (!nodo.listo)
+                pthread_cond_wait(&cond, &mutex);
+        }
+    }
+    phtread_cond_broadcast(&cond);
+    pthread_mutex_unlock(&mutex);
+}
+*/
+/*cuando cierro el write tambien tengo ue cerrar el read*/
+int disco_release(struct inode *inode, struct file *filp) {
   m_lock(&mutex);
 
   if (filp->f_mode & FMODE_WRITE) {
@@ -164,7 +221,7 @@ int syncread_release(struct inode *inode, struct file *filp) {
   return 0;
 }
 
-ssize_t syncread_read(struct file *filp, char *buf,
+ssize_t disco_read(struct file *filp, char *buf,
                     size_t count, loff_t *f_pos) {
   ssize_t rc;
   m_lock(&mutex);
@@ -187,7 +244,7 @@ ssize_t syncread_read(struct file *filp, char *buf,
   printk("<1>read %d bytes at %d\n", (int)count, (int)*f_pos);
 
   /* Transfiriendo datos hacia el espacio del usuario */
-  if (copy_to_user(buf, syncread_buffer+*f_pos, count)!=0) {
+  if (copy_to_user(buf, disco_buffer+*f_pos, count)!=0) {
     /* el valor de buf es una direccion invalida */
     rc= -EFAULT;
     goto epilog;
@@ -201,7 +258,7 @@ epilog:
   return rc;
 }
 
-ssize_t syncread_write( struct file *filp, const char *buf,
+ssize_t disco_write( struct file *filp, const char *buf,
                       size_t count, loff_t *f_pos) {
   ssize_t rc;
   loff_t last;
@@ -215,7 +272,7 @@ ssize_t syncread_write( struct file *filp, const char *buf,
   printk("<1>write %d bytes at %d\n", (int)count, (int)*f_pos);
 
   /* Transfiriendo datos desde el espacio del usuario */
-  if (copy_from_user(syncread_buffer+*f_pos, buf, count)!=0) {
+  if (copy_from_user(disco_buffer+*f_pos, buf, count)!=0) {
     /* el valor de buf es una direccion invalida */
     rc= -EFAULT;
     goto epilog;

@@ -130,7 +130,6 @@ int disco_open(struct inode *inode, struct file *filp) {
       /* Allocating buffer */
       p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
       p->size = 0;
-      p->ready = FALSE;
 
       int rc;
       printk("<1>open request for write\n");
@@ -180,7 +179,6 @@ int disco_open(struct inode *inode, struct file *filp) {
       /* Allocating buffer */
       p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
       p->size = 0;
-      p->ready = FALSE;
 
       int rc;
       printk("<1>open request for write\n");

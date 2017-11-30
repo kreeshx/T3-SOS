@@ -116,11 +116,24 @@ int disco_open(struct inode *inode, struct file *filp) {
   printk("<1>Inserting disco module\n");
   m_lock(&mutex);
 
+  p = kmalloc(sizeof(Pipe*), GFP_KERNEL);
+  printk("<1>In disco_open 1\n");
+  p->mutex = m;
+  printk("<1>In disco_open 2\n");
+  p->cond = c; 
+  printk("<1>In disco_open 3\n");
+  m_init(&m);
+  printk("<1>In disco_open 4\n");
+  c_init(&c);
+  printk("<1>In disco_open 5\n");
+
   /*Si es un escritor debe esperar un lector*/
   if (filp->f_mode & FMODE_WRITE) {
-    printk("<1>In disco_open2\n");
+    printk("<1>In disco_open6\n");
     if (readers_pend == NULL){
       printk("<1>In disco_open write primer if\n");
+      
+      /*
       p = kmalloc(sizeof(Pipe*), GFP_KERNEL);
       printk("<1>In disco_open write primer if2\n");
       p->mutex = m;
@@ -131,6 +144,7 @@ int disco_open(struct inode *inode, struct file *filp) {
       printk("<1>In disco_open write primer if5\n");
       c_init(&c);
       printk("<1>In disco_open write primer if6\n");
+      */
 
       /* Allocating buffer */
       p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
@@ -188,9 +202,11 @@ int disco_open(struct inode *inode, struct file *filp) {
   }
   /*Si es un lector debe esperar un escritor*/
   else if (filp->f_mode & FMODE_READ) {
-    printk("<1>In disco_open2\n");
+    printk("<1>In disco_open7\n");
     if (writers_pend == NULL){
       printk("<1>In disco_open read primer if\n");
+
+      /*
       p = kmalloc(sizeof(Pipe*), GFP_KERNEL);
       printk("<1>In disco_open read primer if2\n");
       p->mutex = m;
@@ -201,6 +217,7 @@ int disco_open(struct inode *inode, struct file *filp) {
       printk("<1>In disco_open read primer if5\n");
       c_init(&c);
       printk("<1>In disco_open read primer if6\n");
+      */
 
       /* Allocating buffer */
       p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);

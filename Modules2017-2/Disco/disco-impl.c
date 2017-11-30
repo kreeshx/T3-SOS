@@ -64,8 +64,8 @@ int disco_major = 61;     /* Major number */
 /* Buffer to store data */
 #define MAX_SIZE 8192
 
-static int open_readers;
-static int open_writers;
+static int readers;
+static int writers;
 static Nodo readers_pend;
 static Nodo writers_pend;
 

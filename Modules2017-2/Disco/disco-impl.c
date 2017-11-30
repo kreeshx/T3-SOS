@@ -202,23 +202,26 @@ epilog:
 
 int disco_release(struct inode *inode, struct file *filp) {
   Pipe *p;
+  KMutex m;
+  KCondition c;
 
   p = filp->private_data;
-
-  m_lock(&(p->mutex));
+  m = p->mutex;
+  c = p->cond;
+  m_lock(&p);
 
   if (filp->f_mode & FMODE_WRITE) {
     writing = FALSE;
-    c_broadcast(&(p->cond));
+    c_broadcast(&c);
     printk("<1>close for write successful\n");
   }
   else if (filp->f_mode & FMODE_READ) {
     if (readers_pend == NULL)
-      c_broadcast(&(p->cond));
+      c_broadcast(&c);
     printk("<1>close for read\n");
   }
 
-  m_unlock(&(p->mutex));
+  m_unlock(&m);
   return 0;
 }
 
@@ -226,16 +229,19 @@ ssize_t disco_read(struct file *filp, char *buf,
                     size_t count, loff_t *f_pos) {
   ssize_t rc;
   Pipe *p;
+  KMutex m;
+  KCondition c;
 
   p = filp->private_data;
-
-  m_lock(&(p->mutex));
+  m = p->mutex;
+  c = p->cond;
+  m_lock(&m);
 
   while ((p->size) <= *f_pos && writing) {
     /* si el lector esta en el final del archivo pero hay un proceso
      * escribiendo todavia en el archivo, el lector espera.
      */
-    if (c_wait(&(p->cond), &(p->mutex))) {
+    if (c_wait(&c, &m)) {
       printk("<1>read interrupted\n");
       rc= -EINTR;
       goto epilog;
@@ -259,7 +265,7 @@ ssize_t disco_read(struct file *filp, char *buf,
   rc= count;
 
 epilog:
-  m_unlock(&(p->mutex));
+  m_unlock(&m);
   return rc;
 }
 
@@ -268,10 +274,13 @@ ssize_t disco_write( struct file *filp, const char *buf,
   ssize_t rc;
   loff_t last;
   Pipe *p;
+  KMutex m;
+  KCondition c;
 
   p = filp->private_data;
-
-  m_lock(&(p->mutex));
+  m = p->mutex;
+  c = p->cond;
+  m_lock(&m);
 
   last= *f_pos + count;
   if (last>MAX_SIZE) {
@@ -289,9 +298,9 @@ ssize_t disco_write( struct file *filp, const char *buf,
   *f_pos += count;
   p->size = *f_pos;
   rc= count;
-  c_broadcast(&(p->cond));
+  c_broadcast(&c);
 
 epilog:
-  m_unlock(&(p->mutex));
+  m_unlock(&m);
   return rc;
 }

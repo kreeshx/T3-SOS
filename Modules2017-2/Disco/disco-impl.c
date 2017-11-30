@@ -111,7 +111,7 @@ void disco_exit(void) {
 }
 
 void poner_al_final(struct node *lista, struct node *file){
-  if lista == NULL{
+  if (lista == NULL){
     lista = file;
   }
   else{

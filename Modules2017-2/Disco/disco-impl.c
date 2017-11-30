@@ -239,15 +239,15 @@ int disco_open(struct inode *inode, struct file *filp) {
       printk("<1>open for read successful\n");
     }
     else {
-      printk("<1>In disco_open write segundo if\n");
+      printk("<1>In disco_open read segundo if\n");
       Pipe *p = writers_pend->p;
-      printk("<1>In disco_open write segundo if2\n");
+      printk("<1>In disco_open read segundo if2\n");
       writers_pend->listo = TRUE;
-      printk("<1>In disco_open write segundo if3\n");
+      printk("<1>In disco_open read segundo if3\n");
       writers_pend = writers_pend->prox;
-      printk("<1>In disco_open write segundo if4\n");
+      printk("<1>In disco_open read segundo if4\n");
       filp->private_data = p;
-      printk("<1>In disco_open write segundo if5\n");
+      printk("<1>In disco_open read segundo if5\n");
       c_broadcast(&cond);
       //saca el valor de la lista readers
       //valor que saque de readers lo pongo como ready
@@ -355,7 +355,7 @@ ssize_t disco_read(struct file *filp, char *buf,
      * escribiendo todavia en el archivo, el lector espera.
      */
     printk("<1>In disco_read while\n");
-    if (c_wait(&cond, &mutex)) {
+    if (c_wait(&c, &m)) {
       printk("<1>read interrupted\n");
       rc= -EINTR;
       goto epilog;
@@ -422,7 +422,7 @@ ssize_t disco_write( struct file *filp, const char *buf,
   printk("<1>In disco_write11\n");
   rc= count;
   printk("<1>In disco_write12\n");
-  c_broadcast(&cond);
+  c_broadcast(&c);
   printk("<1>In disco_write13\n");
 
 epilog:

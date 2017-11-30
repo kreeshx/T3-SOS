@@ -111,7 +111,7 @@ int disco_open(struct inode *inode, struct file *filp) {
   printk("<1>In disco_open\n");
   int rc= 0;
   Pipe *p;
-  Node nodo;
+  Node *nodo;
 
   printk("<1>Inserting disco module\n");
   m_lock(&mutex);

@@ -74,6 +74,7 @@ static KMutex mutex;
 static KCondition cond;
 
 int disco_init(void) {
+  printk("<1>In disco_init\n");
   int rc;
 
   /* Registering device */
@@ -89,11 +90,12 @@ int disco_init(void) {
 
   m_init(&mutex);
   c_init(&cond);
-
+  printk("<1>Out disco_init\n");
   return 0;
 }
 
 void disco_exit(void) {
+  printk("<1>In disco_exit\n");
   /* Freeing the major number */
   unregister_chrdev(disco_major, "disco");
 
@@ -107,6 +109,7 @@ void disco_exit(void) {
 }
 
 int disco_open(struct inode *inode, struct file *filp) {
+  printk("<1>In disco_open\n");
   int rc= 0;
 
   Pipe p = kmalloc(sizeof(Pipe), GFP_KERNEL);
@@ -230,6 +233,7 @@ void emparejar(char sexo, char *nombre, char *pareja)
 */
 /*cuando cierro el write tambien tengo ue cerrar el read*/
 int disco_release(struct inode *inode, struct file *filp) {
+  printk("<1>In disco_release\n");
   m_lock(&mutex);
 
   if (filp->f_mode & FMODE_WRITE) {
@@ -248,6 +252,7 @@ int disco_release(struct inode *inode, struct file *filp) {
 
 ssize_t disco_read(struct file *filp, char *buf,
                     size_t count, loff_t *f_pos) {
+  printk("<1>In disco_read\n");
   ssize_t rc;
   Pipe p = filp->private_data;
   KMutex m = p->mutex;
@@ -287,6 +292,7 @@ epilog:
 
 ssize_t disco_write( struct file *filp, const char *buf,
                       size_t count, loff_t *f_pos) {
+  printk("<1>In disco_write\n");
   ssize_t rc;
   loff_t last;
   Pipe p = filp->private_data;

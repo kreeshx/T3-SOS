@@ -148,9 +148,9 @@ int disco_open(struct inode *inode, struct file *filp) {
     filp->private_data = p;
 
     Nodo nodo;
-    nodo.actual_file = filp;
-    nodo.listo = FALSE;
-    nodo.prox = NULL;
+    nodo->actual_file = filp;
+    nodo->listo = FALSE;
+    nodo->prox = NULL;
     poner_al_final(writers, nodo);
     while (readers==0) {
       if (c_wait(&cond, &mutex)) {
@@ -175,9 +175,9 @@ int disco_open(struct inode *inode, struct file *filp) {
      */
   	readers++;
     Nodo nodo;
-    nodo.actual_file = filp;
-    nodo.listo = FALSE;
-    nodo.prox = NULL;
+    nodo->actual_file = filp;
+    nodo->listo = FALSE;
+    nodo->prox = NULL;
     poner_al_final(readers, nodo);
     while (writers==0) {
       if (c_wait(&cond, &mutex)) {

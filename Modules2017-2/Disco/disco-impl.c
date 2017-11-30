@@ -36,7 +36,7 @@ struct file_operations disco_fops = {
 typedef struct {
   char *buffer;
   int size;
-  int estado;
+  int muerto;
   KMutex mutex;
   KCondition cond;
 } Pipe;
@@ -300,7 +300,7 @@ ssize_t disco_read(struct file *filp, char *buf,
   m_lock(&(p->mutex));
   printk("<1>In disco_read6\n");
   printk("<1>               size:%d, pos: %d\n", (int)(p->size), (int)(*f_pos));
-  while (p->size <= *f_pos && !(p->muerto) {
+  while (p->size <= *f_pos && !(p->muerto)) {
     printk("<1>               size:%d, pos: %d\n", (int)(p->size), (int)(*f_pos));
     /* si el lector esta en el final del archivo pero hay un proceso
      * escribiendo todavia en el archivo, el lector espera.

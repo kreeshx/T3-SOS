@@ -339,13 +339,13 @@ ssize_t disco_read(struct file *filp, char *buf,
   ssize_t rc;
   printk("<1>In disco_read2\n");
   Pipe *p;
-  KMutex m;
-  KCondition c;
+  //KMutex m;
+  //KCondition c;
   printk("<1>In disco_read3\n");
   p = filp->private_data;
   printk("<1>In disco_read4\n");
-  m = p->mutex;
-  c = p->cond;
+  //m = p->mutex;
+  //c = p->cond;
   printk("<1>In disco_read5\n");
   m_lock(&m);
   printk("<1>In disco_read6\n");
@@ -356,7 +356,7 @@ ssize_t disco_read(struct file *filp, char *buf,
      * escribiendo todavia en el archivo, el lector espera.
      */
     printk("<1>In disco_read while\n");
-    if (c_wait(&c, &m)) {
+    if (c_wait(&(p->c), &(p->m))) {
       printk("<1>read interrupted\n");
       rc= -EINTR;
       goto epilog;

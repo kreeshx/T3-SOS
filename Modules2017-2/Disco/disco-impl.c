@@ -382,7 +382,7 @@ ssize_t disco_write( struct file *filp, const char *buf,
   printk("<1>In disco_write12\n");
   rc= count;
   printk("<1>In disco_write13\n");
-  c_broadcast(&c);
+  c_broadcast(&cond);
   printk("<1>In disco_write14\n");
 
 epilog:

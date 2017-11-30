@@ -306,10 +306,11 @@ ssize_t disco_read(struct file *filp, char *buf,
   printk("<1>In disco_read5\n");
   m_lock(&m);
   printk("<1>In disco_read6\n");
-  while (p->size <= *f_pos) {
+  while (p->size <= *f_pos && writers_pend!=NULL) {
     /* si el lector esta en el final del archivo pero hay un proceso
      * escribiendo todavia en el archivo, el lector espera.
      */
+    printk("<1>In disco_read while\n");
     if (c_wait(&c, &m)) {
       printk("<1>read interrupted\n");
       rc= -EINTR;

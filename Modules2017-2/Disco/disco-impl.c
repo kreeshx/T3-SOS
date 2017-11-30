@@ -313,7 +313,7 @@ ssize_t disco_read(struct file *filp, char *buf,
      * escribiendo todavia en el archivo, el lector espera.
      */
     printk("<1>In disco_read while\n");
-    if (c_wait(&c, &m)) {
+    if (c_wait(&cond, &mutex)) {
       printk("<1>read interrupted\n");
       rc= -EINTR;
       goto epilog;

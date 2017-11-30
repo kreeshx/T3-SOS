@@ -43,9 +43,9 @@ typedef struct {
 } Pipe;
 
 typedef struct nodo {
-    char *nombre, *pareja;
-    int listo;
+    struct file *actual_file;
     struct nodo *prox;
+    int listo;
 } Nodo;
 
 /* Declaration of the init and exit functions */
@@ -110,33 +110,48 @@ void disco_exit(void) {
   printk("<1>Removing disco module\n");
 }
 
+void poner_al_final(struct node *lista, struct node *file){
+  if lista == NULL{
+    lista = file;
+  }
+  else{
+    lista.prox = poner_al_final(lista.prox, file);
+  }
+}
+
 int disco_open(struct inode *inode, struct file *filp) {
   printk("<1>In disco_open\n");
   int rc= 0;
-
-  Pipe *p = kmalloc(sizeof(Pipe*), GFP_KERNEL);
-
-  /* Allocating buffer */
-  p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
-  if (p->buffer==NULL) {
-    disco_exit();
-    return -ENOMEM;
-  }
-  memset(p->buffer, 0, MAX_SIZE);
-
-  p->size = 0;
-  p->ready = FALSE;
 
   printk("<1>Inserting disco module\n");
   m_lock(&mutex);
 
   /*Si es un escritor debe esperar un lector*/
   if (filp->f_mode & FMODE_WRITE) {
+    Pipe *p = kmalloc(sizeof(Pipe*), GFP_KERNEL);
+
+    /* Allocating buffer */
+    p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
+    if (p->buffer==NULL) {
+      disco_exit();
+      return -ENOMEM;
+    }
+    memset(p->buffer, 0, MAX_SIZE);
+
+    p->size = 0;
+    p->ready = FALSE;
+
     int rc;
     printk("<1>open request for write\n");
     /* Se debe esperar hasta que no hayan otros lectores o escritores */
     writers++;
     filp->private_data = p;
+
+    Nodo nodo;
+    nodo.actual_file = filp;
+    nodo.listo = FALSE;
+    nodo.prox = NULL;
+    poner_al_final(writers, nodo);
     while (readers==0) {
       if (c_wait(&cond, &mutex)) {
       	writers--;
@@ -159,17 +174,22 @@ int disco_open(struct inode *inode, struct file *filp) {
      * el dispositivo e ingrese un nuevo escritor.
      */
   	readers++;
-  	filp->private_data = p;
-    while (readers==0) {
+    Nodo nodo;
+    nodo.actual_file = filp;
+    nodo.listo = FALSE;
+    nodo.prox = NULL;
+    poner_al_final(readers, nodo);
+    while (writers==0) {
       if (c_wait(&cond, &mutex)) {
+        filp->private_data = writers_pend.actual_file;
       	readers--;
+        c_broadcast(&cond);
         rc= -EINTR;
         goto epilog;
       }
     }
     readers--;
-    p->size= 0;
-    filp->private_data = p;
+    filp->private_data = writers_pend.actual_file;
     c_broadcast(&cond);
     printk("<1>open for read\n");
   }

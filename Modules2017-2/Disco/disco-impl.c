@@ -147,7 +147,7 @@ int disco_open(struct inode *inode, struct file *filp) {
       c_broadcast(&cond);
       printk("<1>open for write successful\n");
     }
-    else {
+    else {
       p = readers_pend->p;
       readers_pend->listo = TRUE;
       readers_pend = readers_pend->prox;
@@ -189,7 +189,7 @@ int disco_open(struct inode *inode, struct file *filp) {
       c_broadcast(&cond);
       printk("<1>open for write successful\n");
     }
-    else {
+    else{
       p = writers_pend->p;
       writers_pend->listo = TRUE;
       writers_pend = writers_pend->prox;

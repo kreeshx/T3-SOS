@@ -110,6 +110,7 @@ int disco_open(struct inode *inode, struct file *filp) {
   KMutex m;
   KCondition c;
 
+  printk("<1>Entra al open\n");
   p = kmalloc(sizeof(Pipe*), GFP_KERNEL);
   m_lock(&mutex);
   m_init(&m);
@@ -119,6 +120,7 @@ int disco_open(struct inode *inode, struct file *filp) {
     if (readers_pend == NULL){
       int rc;
 
+      printk("<1>Open para el write, no hay reader\n");
       p->mutex = m;
       p->cond = c;
 
@@ -136,6 +138,7 @@ int disco_open(struct inode *inode, struct file *filp) {
       writers_pend = nodo;
 
       while (!nodo->listo) {
+        printk("<1>Espera al reader\n");
         if (c_wait(&cond, &mutex)) {
           c_broadcast(&cond);
           rc= -EINTR;
@@ -148,17 +151,20 @@ int disco_open(struct inode *inode, struct file *filp) {
       printk("<1>open for write successful\n");
     }
     else {
+      printk("<1>Open para el write, si hay reader\n");
       p = readers_pend->p;
       readers_pend->listo = TRUE;
       readers_pend = readers_pend->prox;
       filp->private_data = p;
       c_broadcast(&cond);
+      printk("<1>Notifica al reader\n");
     }
   }
   else if (filp->f_mode & FMODE_READ) {
     if (writers_pend == NULL){
       int rc;
 
+      printk("<1>Open para el reader, no hay writer\n");
       p->mutex = m;
       p->cond = c;
 
@@ -176,6 +182,7 @@ int disco_open(struct inode *inode, struct file *filp) {
       readers_pend = nodo;
 
       while (!nodo->listo) {
+        printk("<1>Espera al writer\n");
         if (c_wait(&cond, &mutex)) {
           c_broadcast(&cond);
           rc= -EINTR;
@@ -187,11 +194,13 @@ int disco_open(struct inode *inode, struct file *filp) {
       printk("<1>open for read successful\n");
     }
     else{
+      printk("<1>Open para el reader, si hay writer\n");
       p = writers_pend->p;
       writers_pend->listo = TRUE;
       writers_pend = writers_pend->prox;
       filp->private_data = p;
       c_broadcast(&cond);
+      printk("<1>Notifica al writer\n");
     }
   }
 
@@ -205,6 +214,7 @@ int disco_release(struct inode *inode, struct file *filp) {
   KMutex m;
   KCondition c;
 
+  printk("<1>Entra al release\n");
   p = filp->private_data;
   m = p->mutex;
   c = p->cond;
@@ -232,12 +242,14 @@ ssize_t disco_read(struct file *filp, char *buf,
   KMutex m;
   KCondition c;
 
+  printk("<1>Entra en el read\n");
   p = filp->private_data;
   m = p->mutex;
   c = p->cond;
   m_lock(&m);
 
   while ((p->size) <= *f_pos && writing) {
+    printk("<1>Espera en el read\n");
     /* si el lector esta en el final del archivo pero hay un proceso
      * escribiendo todavia en el archivo, el lector espera.
      */
@@ -248,6 +260,7 @@ ssize_t disco_read(struct file *filp, char *buf,
     }
   }
 
+  printk("<1>Termina de esperar en el read\n");
   if (count > (p->size)-*f_pos) {
     count= (p->size)-*f_pos;
   }
@@ -277,6 +290,7 @@ ssize_t disco_write( struct file *filp, const char *buf,
   KMutex m;
   KCondition c;
 
+  printk("<1>Entra el write\n");
   p = filp->private_data;
   m = p->mutex;
   c = p->cond;

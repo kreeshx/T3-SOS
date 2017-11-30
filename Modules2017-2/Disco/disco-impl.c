@@ -97,10 +97,11 @@ void disco_exit(void) {
   /* Freeing the major number */
   unregister_chrdev(disco_major, "disco");
 
-  /* Freeing buffer disco */
+  /* Freeing buffer disco
   if (disco_buffer) {
     kfree(disco_buffer);
   }
+  */
 
   printk("<1>Removing disco module\n");
 }
@@ -108,7 +109,7 @@ void disco_exit(void) {
 int disco_open(struct inode *inode, struct file *filp) {
   int rc= 0;
 
-  Pipe pipe = (Pipe)nMalloc(sizeof(pipe));
+  Pipe pipe = (Pipe)nMalloc(sizeof(*pipe));
 
   /* Allocating disco_buffer */
   pipe->disco_buffer = kmalloc(MAX_SIZE, GFP_KERNEL);

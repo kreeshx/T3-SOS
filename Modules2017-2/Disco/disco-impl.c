@@ -216,7 +216,7 @@ int disco_release(struct inode *inode, struct file *filp) {
   else if (filp->f_mode & FMODE_READ) {
     if (readers_pend == NULL)
       c_broadcast(&(p->cond));
-    printk("<1>close for read (readers remaining=%d)\n", readers);
+    printk("<1>close for read\n");
   }
 
   m_unlock(&(p->mutex));

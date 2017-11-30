@@ -138,7 +138,6 @@ int disco_open(struct inode *inode, struct file *filp) {
       p->size = 0;
       printk("<1>In disco_open write primer if8\n");
 
-      int rc;
       printk("<1>open request for write\n");
       /* Se debe esperar hasta que no hayan otros lectores o escritores */
       filp->private_data = p;
@@ -209,7 +208,6 @@ int disco_open(struct inode *inode, struct file *filp) {
       p->size = 0;
       printk("<1>In disco_open read primer if8\n");
 
-      int rc;
       printk("<1>open request for read\n");
       /* Se debe esperar hasta que no hayan otros lectores o escritores */
       filp->private_data = p;
@@ -340,11 +338,14 @@ ssize_t disco_read(struct file *filp, char *buf,
   printk("<1>In disco_read\n");
   ssize_t rc;
   printk("<1>In disco_read2\n");
-  Pipe *p = filp->private_data;
+  Pipe *p;
+  KMutex m;
+  KCondition c;
   printk("<1>In disco_read3\n");
-  KMutex m = p->mutex;
+  p = filp->private_data;
   printk("<1>In disco_read4\n");
-  KCondition c = p->cond;
+  m = p->mutex;
+  c = p->cond;
   printk("<1>In disco_read5\n");
   m_lock(&m);
   printk("<1>In disco_read6\n");
@@ -393,11 +394,14 @@ ssize_t disco_write( struct file *filp, const char *buf,
   printk("<1>In disco_write2\n");
   loff_t last;
   printk("<1>In disco_write3\n");
-  Pipe *p = filp->private_data;
+  Pipe *p;
+  KMutex m;
+  KCondition c;
   printk("<1>In disco_write4\n");
-  KMutex m = p->mutex;
+  p = filp->private_data;
   printk("<1>In disco_write5\n");
-  KCondition c = p->cond;
+  m = p->mutex;
+  c = p->cond;
   printk("<1>In disco_write6\n");
   m_lock(&m);
   printk("<1>In disco_write7\n");

@@ -40,6 +40,12 @@ typedef struct {
   KCondition cond;
 } Pipe;
 
+typedef struct node {
+    Pipe *p;
+    struct node *prox;
+    int listo;
+} Node;
+
 /* Declaration of the init and exit functions */
 module_init(disco_init);
 module_exit(disco_exit);

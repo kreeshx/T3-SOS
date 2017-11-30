@@ -42,7 +42,7 @@ typedef struct {
   int read;
 } Pipe;
 
-typedef struct Node {
+typedef struct node {
     struct file *actual_file;
     struct nodo *prox;
     int listo;
@@ -110,7 +110,7 @@ void disco_exit(void) {
   printk("<1>Removing disco module\n");
 }
 
-struct Node poner_al_final(struct node *lista, struct node *file){
+struct node poner_al_final(struct node *lista, struct node *file){
   if (lista == NULL){
     lista = file;
   }

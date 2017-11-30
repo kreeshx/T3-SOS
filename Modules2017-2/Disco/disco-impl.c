@@ -111,6 +111,7 @@ int disco_open(struct inode *inode, struct file *filp) {
   printk("<1>In disco_open\n");
   int rc= 0;
   Pipe *p;
+  Node nodo;
 
   printk("<1>Inserting disco module\n");
   m_lock(&mutex);
@@ -130,7 +131,7 @@ int disco_open(struct inode *inode, struct file *filp) {
       /* Se debe esperar hasta que no hayan otros lectores o escritores */
       filp->private_data = p;
 
-      Node *nodo = kmalloc(sizeof(Node*), GFP_KERNEL);
+      nodo = kmalloc(sizeof(Node*), GFP_KERNEL);
       nodo->p = p;
       nodo->listo = FALSE;
       nodo->prox = writers_pend;

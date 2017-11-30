@@ -168,7 +168,7 @@ int disco_open(struct inode *inode, struct file *filp) {
       p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
       p->size = 0;
 
-      printk("<1>open request for write\n");
+      printk("<1>open request for read\n");
       /* Se debe esperar hasta que no hayan otros lectores o escritores */
       filp->private_data = p;
 
@@ -187,7 +187,7 @@ int disco_open(struct inode *inode, struct file *filp) {
       }
       p->size = 0;
       c_broadcast(&cond);
-      printk("<1>open for write successful\n");
+      printk("<1>open for read successful\n");
     }
     else{
       p = writers_pend->p;
@@ -205,6 +205,7 @@ epilog:
 
 int disco_release(struct inode *inode, struct file *filp) {
   Pipe *p;
+  p = filp->private_data;
   m_lock(&(p->mutex));
 
   if (filp->f_mode & FMODE_WRITE) {

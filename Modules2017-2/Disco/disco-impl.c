@@ -190,39 +190,39 @@ int disco_open(struct inode *inode, struct file *filp) {
   else if (filp->f_mode & FMODE_READ) {
     printk("<1>In disco_open2\n");
     if (writers_pend == NULL){
-      printk("<1>In disco_open write primer if\n");
+      printk("<1>In disco_open read primer if\n");
       p = kmalloc(sizeof(Pipe*), GFP_KERNEL);
-      printk("<1>In disco_open write primer if2\n");
+      printk("<1>In disco_open read primer if2\n");
       p->mutex = m;
-      printk("<1>In disco_open write primer if3\n");
+      printk("<1>In disco_open read primer if3\n");
       p->cond = c; 
-      printk("<1>In disco_open write primer if4\n");
+      printk("<1>In disco_open read primer if4\n");
       m_init(&m);
-      printk("<1>In disco_open write primer if5\n");
+      printk("<1>In disco_open read primer if5\n");
       c_init(&c);
-      printk("<1>In disco_open write primer if6\n");
+      printk("<1>In disco_open read primer if6\n");
 
       /* Allocating buffer */
       p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
-      printk("<1>In disco_open write primer if7\n");
+      printk("<1>In disco_open read primer if7\n");
       p->size = 0;
-      printk("<1>In disco_open write primer if8\n");
+      printk("<1>In disco_open read primer if8\n");
 
-      printk("<1>open request for write\n");
+      printk("<1>open request for read\n");
       /* Se debe esperar hasta que no hayan otros lectores o escritores */
       filp->private_data = p;
-      printk("<1>In disco_open write primer if9\n");
+      printk("<1>In disco_open read primer if9\n");
 
       nodo = kmalloc(sizeof(Node*), GFP_KERNEL);
-      printk("<1>In disco_open write primer if10\n");
+      printk("<1>In disco_open read primer if10\n");
       nodo->p = p;
-      printk("<1>In disco_open write primer if11\n");
+      printk("<1>In disco_open read primer if11\n");
       nodo->listo = FALSE;
-      printk("<1>In disco_open write primer if12\n");
+      printk("<1>In disco_open read primer if12\n");
       nodo->prox = readers_pend;
-      printk("<1>In disco_open write primer if13\n");
+      printk("<1>In disco_open read primer if13\n");
       readers_pend = nodo;
-      printk("<1>In disco_open write primer if14\n");
+      printk("<1>In disco_open read primer if14\n");
       while (!nodo->listo) {
         if (c_wait(&cond, &mutex)) {
           c_broadcast(&cond);
@@ -230,24 +230,24 @@ int disco_open(struct inode *inode, struct file *filp) {
           goto epilog;
         }
       }
-      printk("<1>In disco_open write primer if15\n");
+      printk("<1>In disco_open read primer if15\n");
       p->size= 0;
-      printk("<1>In disco_open write primer if16\n");
+      printk("<1>In disco_open read primer if16\n");
       c_broadcast(&cond);
-      printk("<1>open for write successful\n");
+      printk("<1>open for read successful\n");
     }
     else {
-      printk("<1>In disco_open write segundo if\n");
+      printk("<1>In disco_open read segundo if\n");
       Pipe *p = writers_pend->p;
-      printk("<1>In disco_open write segundo if2\n");
+      printk("<1>In disco_open read segundo if2\n");
       writers_pend->listo = TRUE;
-      printk("<1>In disco_open write segundo if3\n");
+      printk("<1>In disco_open read segundo if3\n");
       writers_pend = writers_pend->prox;
-      printk("<1>In disco_open write segundo if4\n");
+      printk("<1>In disco_open read segundo if4\n");
       filp->private_data = p;
-      printk("<1>In disco_open write segundo if5\n");
+      printk("<1>In disco_open read segundo if5\n");
       c_broadcast(&cond);
-      printk("<1>In disco_open write segundo if6\n");
+      printk("<1>In disco_open read segundo if6\n");
       //saca el valor de la lista readers
       //valor que saque de readers lo pongo como ready
       //actualizo readers

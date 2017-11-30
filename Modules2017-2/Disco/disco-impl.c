@@ -40,7 +40,7 @@ typedef struct {
   KCondition cond;
   int ready;
   int read;
-} *Pipe;
+} Pipe;
 
 typedef struct nodo {
     char *nombre, *pareja;
@@ -66,8 +66,8 @@ int disco_major = 61;     /* Major number */
 
 static int readers;
 static int writers;
-static Nodo readers_pend;
-static Nodo writers_pend;
+static Nodo *readers_pend;
+static Nodo *writers_pend;
 
 /* El mutex y la condicion para disco */
 static KMutex mutex;
@@ -87,6 +87,8 @@ int disco_init(void) {
 
   writers = 0;
   readers = 0;
+  readers_pend = NULL;
+  writers_pend = NULL;
 
   m_init(&mutex);
   c_init(&cond);

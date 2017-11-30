@@ -109,19 +109,18 @@ void disco_exit(void) {
 int disco_open(struct inode *inode, struct file *filp) {
   int rc= 0;
 
-  Pipe pipe_rw = (Pipe)nMalloc(sizeof(*pipe_rw));
-  nLRLock candado = (nLRLock)nMalloc(sizeof(*candado))
+  pipe *p = kmalloc(sizeof(pipe), GEP_KERNEL);
 
   /* Allocating disco_buffer */
-  pipe_rw->disco_buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
-  if (pipe_rw->disco_buffer==NULL) {
+  p->disco_buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
+  if (p->disco_buffer==NULL) {
     disco_exit();
     return -ENOMEM;
   }
-  memset(pipe_rw->disco_buffer, 0, MAX_SIZE);
+  memset(p->disco_buffer, 0, MAX_SIZE);
 
-  pipe_rw->size = 0;
-  pipe_rw->ready = FALSE;
+  p->size = 0;
+  p->ready = FALSE;
 
   printk("<1>Inserting disco module\n");
   m_lock(mutex);
@@ -132,7 +131,7 @@ int disco_open(struct inode *inode, struct file *filp) {
     printk("<1>open request for write\n");
     /* Se debe esperar hasta que no hayan otros lectores o escritores */
     writers++;
-    filp->private_data = pipe_rw;
+    filp->private_data = p;
     while (readers==0) {
       if (c_wait(&cond, &mutex)) {
       	writers--;
@@ -154,7 +153,7 @@ int disco_open(struct inode *inode, struct file *filp) {
      * el dispositivo e ingrese un nuevo escritor.
      */
   	readers++;
-  	filp->private_data = pipe_rw;
+  	filp->private_data = p;
     while (readers==0) {
       if (c_wait(&cond, &mutex)) {
       	readers--;

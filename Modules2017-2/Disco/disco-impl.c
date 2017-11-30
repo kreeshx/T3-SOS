@@ -110,12 +110,13 @@ void disco_exit(void) {
   printk("<1>Removing disco module\n");
 }
 
-struct node poner_al_final(struct node *lista, struct node *file){
+struct node *poner_al_final(struct node *lista, struct node *file){
   if (lista == NULL){
     lista = file;
   }
   else{
-    lista->prox = poner_al_final(lista->prox, file);
+    Node *proximo = lista->prox;
+    lista->prox = poner_al_final(proximo, file);
   }
   return lista;
 }

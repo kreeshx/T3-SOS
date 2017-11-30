@@ -254,7 +254,7 @@ ssize_t disco_read(struct file *filp, char *buf,
                     size_t count, loff_t *f_pos) {
   printk("<1>In disco_read\n");
   ssize_t rc;
-  Pipe p = filp->private_data;
+  Pipe *p = filp->private_data;
   KMutex m = p->mutex;
   KCondition c = p->cond;
   m_lock(&m);

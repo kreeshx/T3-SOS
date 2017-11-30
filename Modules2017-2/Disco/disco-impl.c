@@ -367,7 +367,6 @@ ssize_t disco_read(struct file *filp, char *buf,
   if (count > p->size-*f_pos) {
     count= p->size-*f_pos;
   }
-  printk("<1>In disco_read8\n");
   printk("<1>read %d bytes at %d\n", (int)count, (int)*f_pos);
 
   /* Transfiriendo datos hacia el espacio del usuario */
@@ -376,11 +375,11 @@ ssize_t disco_read(struct file *filp, char *buf,
     rc= -EFAULT;
     goto epilog;
   }
-  printk("<1>In disco_read9\n");
+  printk("<1>In disco_read8\n");
   *f_pos+= count;
-  printk("<1>In disco_read10\n");
+  printk("<1>In disco_read9\n");
   rc= count;
-  printk("<1>In disco_read11\n");
+  printk("<1>In disco_read10\n");
 
 epilog:
   m_unlock(&m);
@@ -408,7 +407,6 @@ ssize_t disco_write( struct file *filp, const char *buf,
   if (last>MAX_SIZE) {
     count -= last-MAX_SIZE;
   }
-  printk("<1>In disco_write9\n");
   printk("<1>write %d bytes at %d\n", (int)count, (int)*f_pos);
 
   /* Transfiriendo datos desde el espacio del usuario */
@@ -417,15 +415,15 @@ ssize_t disco_write( struct file *filp, const char *buf,
     rc= -EFAULT;
     goto epilog;
   }
-  printk("<1>In disco_write10\n");
+  printk("<1>In disco_write9\n");
   *f_pos += count;
-  printk("<1>In disco_write11\n");
+  printk("<1>In disco_write10\n");
   p->size= *f_pos;
-  printk("<1>In disco_write12\n");
+  printk("<1>In disco_write11\n");
   rc= count;
-  printk("<1>In disco_write13\n");
+  printk("<1>In disco_write12\n");
   c_broadcast(&cond);
-  printk("<1>In disco_write14\n");
+  printk("<1>In disco_write13\n");
 
 epilog:
   m_unlock(&m);

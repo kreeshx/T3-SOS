@@ -192,9 +192,9 @@ int disco_open(struct inode *inode, struct file *filp) {
       printk("<1>open for write successful\n");
     }
     else {
-      Pipe *p = writers->p;
-      writers->listo = TRUE;
-      writers = readers->prox;
+      Pipe *p = writers_pend->p;
+      writers_pend->listo = TRUE;
+      writers_pend = writers_pen->prox;
       filp->private_data = p;
       c_broadcast(&cond);
       //saca el valor de la lista readers
@@ -276,7 +276,7 @@ int disco_release(struct inode *inode, struct file *filp) {
   }
   else if (filp->f_mode & FMODE_READ) {
     c_broadcast(&cond);
-    printk("<1>close for read (readers remaining=%d)\n", readers);
+    printk("<1>close for read\n";
   }
 
   m_unlock(&mutex);
@@ -291,7 +291,7 @@ ssize_t disco_read(struct file *filp, char *buf,
   KMutex m = p->mutex;
   KCondition c = p->cond;
   m_lock(&m);
-  while (p->size <= *f_pos && writers > 0) {
+  while (p->size <= *f_pos) {
     /* si el lector esta en el final del archivo pero hay un proceso
      * escribiendo todavia en el archivo, el lector espera.
      */

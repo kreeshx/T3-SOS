@@ -149,6 +149,7 @@ int disco_open(struct inode *inode, struct file *filp) {
      * el dispositivo e ingrese un nuevo escritor.
      */
   	readers++;
+  	filp->private_data = pipe;
     while (readers==0) {
       if (c_wait(&cond, &mutex)) {
       	readers--;

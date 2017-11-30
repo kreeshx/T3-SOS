@@ -141,7 +141,8 @@ int disco_open(struct inode *inode, struct file *filp) {
       }
     }
     writers--;
-    (filp->private_data)->size= 0;
+    p->size= 0;
+    filp->private_data = p;
     c_broadcast(&cond);
     printk("<1>open for write successful\n");
   }
@@ -162,7 +163,8 @@ int disco_open(struct inode *inode, struct file *filp) {
       }
     }
     readers--;
-    (filp->private_data)->size= 0;
+    p->size= 0;
+    filp->private_data = p;
     c_broadcast(&cond);
     printk("<1>open for read\n");
   }
@@ -201,7 +203,7 @@ void emparejar(char sexo, char *nombre, char *pareja)
             mujeres->listo = TRUE;   // desbloqueamos a la mujer
             mujeres = mujeres->prox; // y la sacamos de la lista
         }
-        else { /* no hay mujeres esperando
+        else { // no hay mujeres esperando
             nodo.prox = hombres; // se agrega a la lista de hombres
             hombres = &nodo;     // en espera
             while (!nodo.listo) // esperar una mujer cambiara nodo.listo

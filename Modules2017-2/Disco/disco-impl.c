@@ -318,6 +318,7 @@ ssize_t disco_read(struct file *filp, char *buf,
       rc= -EINTR;
       goto epilog;
     }
+    printk("<1>In disco_read while 2\n");
   }
   printk("<1>In disco_read7\n");
 

@@ -112,7 +112,7 @@ int disco_open(struct inode *inode, struct file *filp) {
   printk("<1>In disco_open\n");
   int rc= 0;
 
-  Pipe p = kmalloc(sizeof(Pipe), GFP_KERNEL);
+  Pipe *p = kmalloc(sizeof(Pipe*), GFP_KERNEL);
 
   /* Allocating buffer */
   p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
@@ -295,7 +295,7 @@ ssize_t disco_write( struct file *filp, const char *buf,
   printk("<1>In disco_write\n");
   ssize_t rc;
   loff_t last;
-  Pipe p = filp->private_data;
+  Pipe *p = filp->private_data;
   KMutex m = p->mutex;
   KCondition c = p->cond;
   m_lock(&m);

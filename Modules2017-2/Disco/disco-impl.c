@@ -110,6 +110,8 @@ int disco_open(struct inode *inode, struct file *filp) {
   int rc= 0;
   Pipe *p;
   Node *nodo;
+  KMutex m;
+  KCondition c;
 
   printk("<1>Inserting disco module\n");
   m_lock(&mutex);
@@ -120,10 +122,10 @@ int disco_open(struct inode *inode, struct file *filp) {
     if (readers_pend == NULL){
       printk("<1>In disco_open write primer if\n");
       p = (Pipe*) kmalloc(sizeof(Pipe*), GFP_KERNEL);
-      KMutex m = p->mutex;
-      KCondition c = p->cond; 
       m_init(&m);
       c_init(&c);
+      p->mutex = m;
+      p->cond = c; 
 
       /* Allocating buffer */
       p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
@@ -170,10 +172,10 @@ int disco_open(struct inode *inode, struct file *filp) {
   else if (filp->f_mode & FMODE_READ) {
     if (writers_pend == NULL){
       p = kmalloc(sizeof(Pipe*), GFP_KERNEL);
-      KMutex *m = p->mutex;
-      KCondition *c = p->cond; 
       m_init(&m);
       c_init(&c);
+      p->mutex = m;
+      p->cond = c; 
 
       /* Allocating buffer */
       p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);

@@ -274,8 +274,10 @@ ssize_t disco_read(struct file *filp, char *buf,
     goto epilog;
   }
 
+  printk("Transferi los datos desde el espacio del usuario (reader)\n");
   *f_pos+= count;
   rc= count;
+  printk("<1>Termine de leer\n");
 
 epilog:
   m_unlock(&m);
@@ -309,10 +311,12 @@ ssize_t disco_write( struct file *filp, const char *buf,
     goto epilog;
   }
 
+  printk("Transferi los datos desde el espacio del usuario (write)\n");
   *f_pos += count;
   p->size = *f_pos;
   rc= count;
   c_broadcast(&c);
+  printk("<1>Termine de escribir\n");
 
 epilog:
   m_unlock(&m);

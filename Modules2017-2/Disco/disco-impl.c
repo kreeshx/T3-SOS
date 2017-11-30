@@ -43,7 +43,7 @@ typedef struct {
 } Pipe;
 
 typedef struct node {
-    struct file *actual_file;
+    struct Pipe *p;
     struct node *prox;
     int listo;
 } Node;
@@ -64,8 +64,6 @@ int disco_major = 61;     /* Major number */
 /* Buffer to store data */
 #define MAX_SIZE 8192
 
-static int readers;
-static int writers;
 static Node *readers_pend;
 static Node *writers_pend;
 
@@ -85,8 +83,6 @@ int disco_init(void) {
     return rc;
   }
 
-  writers = 0;
-  readers = 0;
   readers_pend = NULL;
   writers_pend = NULL;
 
@@ -110,90 +106,106 @@ void disco_exit(void) {
   printk("<1>Removing disco module\n");
 }
 
-struct node *poner_al_final(struct node *lista, struct node *file){
-  if (lista == NULL){
-    lista = file;
-  }
-  else{
-    Node *proximo = lista->prox;
-    lista->prox = poner_al_final(proximo, file);
-  }
-  return lista;
-}
 
 int disco_open(struct inode *inode, struct file *filp) {
   printk("<1>In disco_open\n");
   int rc= 0;
+  Pipe *p;
 
   printk("<1>Inserting disco module\n");
   m_lock(&mutex);
 
   /*Si es un escritor debe esperar un lector*/
   if (filp->f_mode & FMODE_WRITE) {
-    Pipe *p = kmalloc(sizeof(Pipe*), GFP_KERNEL);
+    if (readers_pend == NULL){
+      p = kmalloc(sizeof(Pipe*), GFP_KERNEL);
 
-    /* Allocating buffer */
-    p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
-    if (p->buffer==NULL) {
-      disco_exit();
-      return -ENOMEM;
-    }
-    memset(p->buffer, 0, MAX_SIZE);
+      /* Allocating buffer */
+      p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
+      p->size = 0;
+      p->ready = FALSE;
 
-    p->size = 0;
-    p->ready = FALSE;
+      int rc;
+      printk("<1>open request for write\n");
+      /* Se debe esperar hasta que no hayan otros lectores o escritores */
+      filp->private_data = p;
 
-    int rc;
-    printk("<1>open request for write\n");
-    /* Se debe esperar hasta que no hayan otros lectores o escritores */
-    writers++;
-    filp->private_data = p;
-
-    Node *nodo = kmalloc(sizeof(Nodo*), GFP_KERNEL);
-    nodo->actual_file = filp;
-    nodo->listo = FALSE;
-    nodo->prox = NULL;
-    poner_al_final(writers, nodo);
-    while (readers==0) {
-      if (c_wait(&cond, &mutex)) {
-      	writers--;
-        c_broadcast(&cond);
-        rc= -EINTR;
-        goto epilog;
+      Node *nodo = kmalloc(sizeof(Node*), GFP_KERNEL);
+      nodo->p = p;
+      nodo->listo = FALSE;
+      nodo->prox = writers_pend;
+      writers_pend = nodo;
+      while (!nodo->listo) {
+        if (c_wait(&cond, &mutex)) {
+        	writers--;
+          c_broadcast(&cond);
+          rc= -EINTR;
+          goto epilog;
+        }
       }
+      p->size= 0;
+      c_broadcast(&cond);
+      printk("<1>open for write successful\n");
     }
-    writers--;
-    p->size= 0;
-    filp->private_data = p;
-    c_broadcast(&cond);
-    printk("<1>open for write successful\n");
+    else {
+      Pipe *p = readers->p;
+      readers_pend->listo = TRUE;
+      readers_pend = readers_pend->prox;
+      filp->private_data = p;
+      c_broadcast(&cond);
+      //saca el valor de la lista readers
+      //valor que saque de readers lo pongo como ready
+      //actualizo readers
+      //guardo el pipe en el filp
+      //broadcast
+
+    }
   }
   /*Si es un lector debe esperar un escritor*/
   else if (filp->f_mode & FMODE_READ) {
-    /* Para evitar la hambruna de los escritores, si nadie esta escribiendo
-     * pero hay escritores pendientes (esperan porque readers>0), los
-     * nuevos lectores deben esperar hasta que todos los lectores cierren
-     * el dispositivo e ingrese un nuevo escritor.
-     */
-  	readers++;
-    Node *nodo = kmalloc(sizeof(Nodo*), GFP_KERNEL);
-    nodo->actual_file = filp;
-    nodo->listo = FALSE;
-    nodo->prox = NULL;
-    poner_al_final(readers, nodo);
-    while (writers==0) {
-      if (c_wait(&cond, &mutex)) {
-        filp->private_data = writers_pend.actual_file;
-      	readers--;
-        c_broadcast(&cond);
-        rc= -EINTR;
-        goto epilog;
+    if (writers_pend == NULL){
+      p = kmalloc(sizeof(Pipe*), GFP_KERNEL);
+
+      /* Allocating buffer */
+      p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
+      p->size = 0;
+      p->ready = FALSE;
+
+      int rc;
+      printk("<1>open request for write\n");
+      /* Se debe esperar hasta que no hayan otros lectores o escritores */
+      filp->private_data = p;
+
+      Node *nodo = kmalloc(sizeof(Node*), GFP_KERNEL);
+      nodo->p = p;
+      nodo->listo = FALSE;
+      nodo->prox = readers_pend;
+      readers_pend = nodo;
+      while (!nodo->listo) {
+        if (c_wait(&cond, &mutex)) {
+          writers--;
+          c_broadcast(&cond);
+          rc= -EINTR;
+          goto epilog;
+        }
       }
+      p->size= 0;
+      c_broadcast(&cond);
+      printk("<1>open for write successful\n");
     }
-    readers--;
-    filp->private_data = writers_pend.actual_file;
-    c_broadcast(&cond);
-    printk("<1>open for read\n");
+    else {
+      Pipe *p = writers->p;
+      writers->listo = TRUE;
+      writers = readers->prox;
+      filp->private_data = p;
+      c_broadcast(&cond);
+      //saca el valor de la lista readers
+      //valor que saque de readers lo pongo como ready
+      //actualizo readers
+      //guardo el pipe en el filp
+      //broadcast
+
+    }
   }
 
 epilog:

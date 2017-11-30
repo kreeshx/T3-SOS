@@ -306,7 +306,7 @@ ssize_t disco_read(struct file *filp, char *buf,
   printk("<1>In disco_read5\n");
   m_lock(&m);
   printk("<1>In disco_read6\n");
-  while (p->size <= *f_pos && writers_pend!=NULL) {
+  while (p->size <= *f_pos) {
     /* si el lector esta en el final del archivo pero hay un proceso
      * escribiendo todavia en el archivo, el lector espera.
      */
@@ -322,7 +322,7 @@ ssize_t disco_read(struct file *filp, char *buf,
   if (count > p->size-*f_pos) {
     count= p->size-*f_pos;
   }
-
+  printk("<1>In disco_read8\n");
   printk("<1>read %d bytes at %d\n", (int)count, (int)*f_pos);
 
   /* Transfiriendo datos hacia el espacio del usuario */
@@ -331,9 +331,11 @@ ssize_t disco_read(struct file *filp, char *buf,
     rc= -EFAULT;
     goto epilog;
   }
-
+  printk("<1>In disco_read9\n");
   *f_pos+= count;
+  printk("<1>In disco_read10\n");
   rc= count;
+  printk("<1>In disco_read11\n");
 
 epilog:
   m_unlock(&m);
@@ -344,16 +346,24 @@ ssize_t disco_write( struct file *filp, const char *buf,
                       size_t count, loff_t *f_pos) {
   printk("<1>In disco_write\n");
   ssize_t rc;
+  printk("<1>In disco_write2\n");
   loff_t last;
+  printk("<1>In disco_write3\n");
   Pipe *p = filp->private_data;
+  printk("<1>In disco_write4\n");
   KMutex m = p->mutex;
+  printk("<1>In disco_write5\n");
   KCondition c = p->cond;
+  printk("<1>In disco_write6\n");
   m_lock(&m);
+  printk("<1>In disco_write7\n");
 
   last= *f_pos + count;
+  printk("<1>In disco_write8\n");
   if (last>MAX_SIZE) {
     count -= last-MAX_SIZE;
   }
+  printk("<1>In disco_write9\n");
   printk("<1>write %d bytes at %d\n", (int)count, (int)*f_pos);
 
   /* Transfiriendo datos desde el espacio del usuario */
@@ -362,11 +372,15 @@ ssize_t disco_write( struct file *filp, const char *buf,
     rc= -EFAULT;
     goto epilog;
   }
-
+  printk("<1>In disco_write10\n");
   *f_pos += count;
+  printk("<1>In disco_write11\n");
   p->size= *f_pos;
+  printk("<1>In disco_write12\n");
   rc= count;
+  printk("<1>In disco_write13\n");
   c_broadcast(&c);
+  printk("<1>In disco_write14\n");
 
 epilog:
   m_unlock(&m);

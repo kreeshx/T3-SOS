@@ -118,7 +118,9 @@ int disco_open(struct inode *inode, struct file *filp) {
 
   /*Si es un escritor debe esperar un lector*/
   if (filp->f_mode & FMODE_WRITE) {
+    printk("<1>In disco_open2\n");
     if (readers_pend == NULL){
+      printk("<1>In disco_open write primer if\n");
       p = (Pipe*) kmalloc(sizeof(Pipe*), GFP_KERNEL);
 
       /* Allocating buffer */
@@ -148,6 +150,7 @@ int disco_open(struct inode *inode, struct file *filp) {
       printk("<1>open for write successful\n");
     }
     else {
+      printk("<1>In disco_open write segundo if\n");
       Pipe *p = readers_pend->p;
       readers_pend->listo = TRUE;
       readers_pend = readers_pend->prox;
@@ -288,10 +291,15 @@ ssize_t disco_read(struct file *filp, char *buf,
                     size_t count, loff_t *f_pos) {
   printk("<1>In disco_read\n");
   ssize_t rc;
+  printk("<1>In disco_read2\n");
   Pipe *p = filp->private_data;
+  printk("<1>In disco_read3\n");
   KMutex m = p->mutex;
+  printk("<1>In disco_read4\n");
   KCondition c = p->cond;
+  printk("<1>In disco_read5\n");
   m_lock(&m);
+  printk("<1>In disco_read6\n");
   while (p->size <= *f_pos) {
     /* si el lector esta en el final del archivo pero hay un proceso
      * escribiendo todavia en el archivo, el lector espera.
@@ -302,6 +310,7 @@ ssize_t disco_read(struct file *filp, char *buf,
       goto epilog;
     }
   }
+  printk("<1>In disco_read7\n");
 
   if (count > p->size-*f_pos) {
     count= p->size-*f_pos;

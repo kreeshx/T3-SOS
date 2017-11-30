@@ -118,7 +118,7 @@ int disco_open(struct inode *inode, struct file *filp) {
   /*Si es un escritor debe esperar un lector*/
   if (filp->f_mode & FMODE_WRITE) {
     if (readers_pend == NULL){
-      p = kmalloc(sizeof(Pipe*), GFP_KERNEL);
+      p = (Pipe*) kmalloc(sizeof(Pipe*), GFP_KERNEL);
 
       /* Allocating buffer */
       p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);

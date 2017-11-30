@@ -46,7 +46,7 @@ typedef struct nodo {
     struct file *actual_file;
     struct nodo *prox;
     int listo;
-} Nodo;
+};
 
 /* Declaration of the init and exit functions */
 module_init(disco_init);
@@ -115,7 +115,7 @@ void poner_al_final(struct node *lista, struct node *file){
     lista = file;
   }
   else{
-    lista->prox = poner_al_final(lista.prox, file);
+    lista->prox = poner_al_final(lista->prox, file);
   }
   return lista
 }

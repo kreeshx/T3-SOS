@@ -226,11 +226,11 @@ int disco_release(struct inode *inode, struct file *filp) {
 ssize_t disco_read(struct file *filp, char *buf,
                     size_t count, loff_t *f_pos) {
   ssize_t rc;
-  m_lock(&(p->mutex));
-  ssize_t rc;
   Pipe *p;
 
   p = filp->private_data;
+
+  m_lock(&(p->mutex));
 
   while ((p->size) <= *f_pos && writing) {
     /* si el lector esta en el final del archivo pero hay un proceso

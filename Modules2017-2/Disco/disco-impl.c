@@ -43,7 +43,7 @@ typedef struct {
 } Pipe;
 
 typedef struct node {
-    struct Pipe *p;
+    struct pipe *p;
     struct node *prox;
     int listo;
 } Node;
@@ -277,7 +277,6 @@ int disco_release(struct inode *inode, struct file *filp) {
     printk("<1>close for write successful\n");
   }
   else if (filp->f_mode & FMODE_READ) {
-    readers--;
     c_broadcast(&cond);
     printk("<1>close for read (readers remaining=%d)\n", readers);
   }

@@ -347,7 +347,7 @@ ssize_t disco_read(struct file *filp, char *buf,
   //m = p->mutex;
   //c = p->cond;
   printk("<1>In disco_read5\n");
-  m_lock(&m);
+  m_lock(&(p->mutex));
   printk("<1>In disco_read6\n");
   printk("<1>               size:%d, pos: %d\n", (int)(p->size), (int)(*f_pos));
   while (p->size <= *f_pos) {
@@ -356,7 +356,7 @@ ssize_t disco_read(struct file *filp, char *buf,
      * escribiendo todavia en el archivo, el lector espera.
      */
     printk("<1>In disco_read while\n");
-    if (c_wait(&(p->c), &(p->m))) {
+    if (c_wait(&(p->cond), &(p->mutex))) {
       printk("<1>read interrupted\n");
       rc= -EINTR;
       goto epilog;
@@ -383,7 +383,7 @@ ssize_t disco_read(struct file *filp, char *buf,
   printk("<1>In disco_read10\n");
 
 epilog:
-  m_unlock(&m);
+  m_unlock(&(p->mutex));
   return rc;
 }
 
@@ -395,15 +395,15 @@ ssize_t disco_write( struct file *filp, const char *buf,
   loff_t last;
   printk("<1>In disco_write3\n");
   Pipe *p;
-  KMutex m;
-  KCondition c;
+  //KMutex m;
+  //KCondition c;
   printk("<1>In disco_write4\n");
   p = filp->private_data;
   printk("<1>In disco_write5\n");
-  m = p->mutex;
-  c = p->cond;
+  //m = p->mutex;
+  //c = p->cond;
   printk("<1>In disco_write6\n");
-  m_lock(&m);
+  m_lock(&(p->mutex));
   printk("<1>In disco_write7\n");
 
   last= *f_pos + count;
@@ -426,10 +426,10 @@ ssize_t disco_write( struct file *filp, const char *buf,
   printk("<1>In disco_write11\n");
   rc= count;
   printk("<1>In disco_write12\n");
-  c_broadcast(&c);
+  c_broadcast(&(p->cond));
   printk("<1>In disco_write13\n");
 
 epilog:
-  m_unlock(&m);
+  m_unlock(&(p->mutex));
   return rc;
 }

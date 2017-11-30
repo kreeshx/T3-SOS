@@ -66,8 +66,8 @@ int disco_major = 61;     /* Major number */
 
 static int readers;
 static int writers;
-static Nodo *readers_pend;
-static Nodo *writers_pend;
+static nodo *readers_pend;
+static nodo *writers_pend;
 
 /* El mutex y la condicion para disco */
 static KMutex mutex;
@@ -148,10 +148,10 @@ int disco_open(struct inode *inode, struct file *filp) {
     writers++;
     filp->private_data = p;
 
-    Nodo *nodo = kmalloc(sizeof(Nodo*), GFP_KERNEL);
-    nodo->actual_file = filp;
-    nodo->listo = FALSE;
-    nodo->prox = NULL;
+    nodo *nodo_t = kmalloc(sizeof(Nodo*), GFP_KERNEL);
+    nodo_t->actual_file = filp;
+    nodo_t->listo = FALSE;
+    nodo_t->prox = NULL;
     poner_al_final(writers, nodo);
     while (readers==0) {
       if (c_wait(&cond, &mutex)) {
@@ -175,10 +175,10 @@ int disco_open(struct inode *inode, struct file *filp) {
      * el dispositivo e ingrese un nuevo escritor.
      */
   	readers++;
-    Nodo *nodo = kmalloc(sizeof(Nodo*), GFP_KERNEL);
-    nodo->actual_file = filp;
-    nodo->listo = FALSE;
-    nodo->prox = NULL;
+    nodo *nodo_t = kmalloc(sizeof(Nodo*), GFP_KERNEL);
+    nodo_t->actual_file = filp;
+    nodo_t->listo = FALSE;
+    nodo_t->prox = NULL;
     poner_al_final(readers, nodo);
     while (writers==0) {
       if (c_wait(&cond, &mutex)) {

@@ -120,7 +120,7 @@ int disco_open(struct inode *inode, struct file *filp) {
       p->mutex = m;
       p->cond = c;
       m_init(&m);
-      m_init(&c);
+      c_init(&c);
 
       p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
       p->size = 0;
@@ -163,7 +163,7 @@ int disco_open(struct inode *inode, struct file *filp) {
       p->mutex = m;
       p->cond = c;
       m_init(&m);
-      m_init(&c);
+      c_init(&c);
 
       p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
       p->size = 0;

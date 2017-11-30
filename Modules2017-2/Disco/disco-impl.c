@@ -195,7 +195,7 @@ int disco_open(struct inode *inode, struct file *filp) {
     else {
       Pipe *p = writers_pend->p;
       writers_pend->listo = TRUE;
-      writers_pend = writers_pen->prox;
+      writers_pend = writers_pend->prox;
       filp->private_data = p;
       c_broadcast(&cond);
       //saca el valor de la lista readers

@@ -115,8 +115,9 @@ void poner_al_final(struct node *lista, struct node *file){
     lista = file;
   }
   else{
-    lista.prox = poner_al_final(lista.prox, file);
+    lista->prox = poner_al_final(lista.prox, file);
   }
+  return lista
 }
 
 int disco_open(struct inode *inode, struct file *filp) {
@@ -147,7 +148,7 @@ int disco_open(struct inode *inode, struct file *filp) {
     writers++;
     filp->private_data = p;
 
-    Nodo nodo;
+    Nodo *nodo = kmalloc(sizeof(Nodo*), GFP_KERNEL);
     nodo->actual_file = filp;
     nodo->listo = FALSE;
     nodo->prox = NULL;
@@ -174,7 +175,7 @@ int disco_open(struct inode *inode, struct file *filp) {
      * el dispositivo e ingrese un nuevo escritor.
      */
   	readers++;
-    Nodo nodo;
+    Nodo *nodo = kmalloc(sizeof(Nodo*), GFP_KERNEL);
     nodo->actual_file = filp;
     nodo->listo = FALSE;
     nodo->prox = NULL;

@@ -208,7 +208,7 @@ int disco_release(struct inode *inode, struct file *filp) {
   p = filp->private_data;
   m = p->mutex;
   c = p->cond;
-  m_lock(&p);
+  m_lock(&m);
 
   if (filp->f_mode & FMODE_WRITE) {
     writing = FALSE;

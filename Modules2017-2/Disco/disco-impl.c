@@ -109,7 +109,7 @@ void disco_exit(void) {
 int disco_open(struct inode *inode, struct file *filp) {
   int rc= 0;
 
-  Pipe *p = kmalloc(sizeof(Pipe), GEP_KERNEL);
+  Pipe *p = kmalloc(sizeof(Pipe), GFP_KERNEL);
 
   /* Allocating disco_buffer */
   p->disco_buffer = kmalloc(MAX_SIZE, GFP_KERNEL);

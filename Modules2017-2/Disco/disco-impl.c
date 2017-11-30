@@ -38,6 +38,7 @@ typedef struct {
   int muerto;
   KMutex mutex;
   KCondition cond;
+  int writing;
 } Pipe;
 
 typedef struct node {
@@ -126,6 +127,7 @@ int disco_open(struct inode *inode, struct file *filp) {
 
       p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
       p->size = 0;
+      p->writing = 1;
 
       printk("<1>open request for write\n");
       /* Se debe esperar hasta que no hayan otros lectores o escritores */
@@ -145,7 +147,6 @@ int disco_open(struct inode *inode, struct file *filp) {
           goto epilog;
         }
       }
-      writing = TRUE;
       p->size = 0;
       c_broadcast(&cond);
       printk("<1>open for write successful\n");
@@ -170,6 +171,7 @@ int disco_open(struct inode *inode, struct file *filp) {
 
       p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
       p->size = 0;
+      p->writing = 1;
 
       printk("<1>open request for read\n");
       /* Se debe esperar hasta que no hayan otros lectores o escritores */
@@ -221,7 +223,7 @@ int disco_release(struct inode *inode, struct file *filp) {
   m_lock(&m);
 
   if (filp->f_mode & FMODE_WRITE) {
-    writing = FALSE;
+    p->writing = FALSE;
     c_broadcast(&c);
     printk("<1>close for write successful\n");
   }
@@ -248,7 +250,7 @@ ssize_t disco_read(struct file *filp, char *buf,
   c = p->cond;
   m_lock(&m);
 
-  while ((p->size) <= *f_pos && writing) {
+  while ((p->size) <= *f_pos || writing) {
     printk("<1>Espera en el read\n");
     /* si el lector esta en el final del archivo pero hay un proceso
      * escribiendo todavia en el archivo, el lector espera.

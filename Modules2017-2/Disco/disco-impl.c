@@ -43,7 +43,7 @@ typedef struct {
 } Pipe;
 
 typedef struct node {
-    struct pipe *p;
+    struct Pipe *p;
     struct node *prox;
     int listo;
 } Node;
@@ -137,7 +137,6 @@ int disco_open(struct inode *inode, struct file *filp) {
       writers_pend = nodo;
       while (!nodo->listo) {
         if (c_wait(&cond, &mutex)) {
-        	writers--;
           c_broadcast(&cond);
           rc= -EINTR;
           goto epilog;
@@ -183,7 +182,6 @@ int disco_open(struct inode *inode, struct file *filp) {
       readers_pend = nodo;
       while (!nodo->listo) {
         if (c_wait(&cond, &mutex)) {
-          writers--;
           c_broadcast(&cond);
           rc= -EINTR;
           goto epilog;

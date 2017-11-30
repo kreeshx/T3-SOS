@@ -168,8 +168,10 @@ int disco_open(struct inode *inode, struct file *filp) {
   else if (filp->f_mode & FMODE_READ) {
     if (writers_pend == NULL){
       p = kmalloc(sizeof(Pipe*), GFP_KERNEL);
-      m_init(&(p->m));
-      c_init(&(p->c));
+      KMutex *m = p->mutex;
+      KCondition *c = p->cond; 
+      m_init(&m;
+      c_init(&c);
 
       /* Allocating buffer */
       p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);

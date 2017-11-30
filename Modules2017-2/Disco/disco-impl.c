@@ -43,7 +43,7 @@ typedef struct {
 } Pipe;
 
 typedef struct node {
-    struct Pipe *p;
+    Pipe *p;
     struct node *prox;
     int listo;
 } Node;

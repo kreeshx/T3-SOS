@@ -110,13 +110,13 @@ int disco_open(struct inode *inode, struct file *filp) {
   KMutex m;
   KCondition c;
 
+  p = kmalloc(sizeof(Pipe*), GFP_KERNEL);
   m_lock(&mutex);
 
   if (filp->f_mode & FMODE_WRITE) {
     if (readers_pend == NULL){
       int rc;
 
-      p = kmalloc(sizeof(Pipe*), GFP_KERNEL);
       p->mutex = m;
       p->cond = c;
       m_init(&m);
@@ -159,7 +159,6 @@ int disco_open(struct inode *inode, struct file *filp) {
     if (writers_pend == NULL){
       int rc;
 
-      p = kmalloc(sizeof(Pipe*), GFP_KERNEL);
       p->mutex = m;
       p->cond = c;
       m_init(&m);

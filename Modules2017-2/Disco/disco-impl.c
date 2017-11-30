@@ -98,8 +98,8 @@ void disco_exit(void) {
   unregister_chrdev(disco_major, "disco");
 
   /* Freeing buffer disco
-  if (disco_buffer) {
-    kfree(disco_buffer);
+  if (buffer) {
+    kfree(buffer);
   }
   */
 
@@ -111,19 +111,19 @@ int disco_open(struct inode *inode, struct file *filp) {
 
   Pipe p = kmalloc(sizeof(Pipe), GFP_KERNEL);
 
-  /* Allocating disco_buffer */
-  p->disco_buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
-  if (p->disco_buffer==NULL) {
+  /* Allocating buffer */
+  p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
+  if (p->buffer==NULL) {
     disco_exit();
     return -ENOMEM;
   }
-  memset(p->disco_buffer, 0, MAX_SIZE);
+  memset(p->buffer, 0, MAX_SIZE);
 
   p->size = 0;
   p->ready = FALSE;
 
   printk("<1>Inserting disco module\n");
-  m_lock(mutex);
+  m_lock(&mutex);
 
   /*Si es un escritor debe esperar un lector*/
   if (filp->f_mode & FMODE_WRITE) {

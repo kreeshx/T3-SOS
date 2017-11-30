@@ -147,7 +147,7 @@ int disco_open(struct inode *inode, struct file *filp) {
       printk("<1>open for write successful\n");
     }
     else {
-      Pipe *p = readers->p;
+      Pipe *p = readers_pend->p;
       readers_pend->listo = TRUE;
       readers_pend = readers_pend->prox;
       filp->private_data = p;
@@ -276,7 +276,7 @@ int disco_release(struct inode *inode, struct file *filp) {
   }
   else if (filp->f_mode & FMODE_READ) {
     c_broadcast(&cond);
-    printk("<1>close for read\n";
+    printk("<1>close for read\n");
   }
 
   m_unlock(&mutex);

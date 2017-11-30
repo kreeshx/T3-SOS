@@ -35,11 +35,9 @@ struct file_operations disco_fops = {
 
 typedef struct {
   char *buffer;
-  int in, out, size;
+  int size;
   KMutex mutex;
   KCondition cond;
-  int ready;
-  int read;
 } Pipe;
 
 typedef struct node {
@@ -122,6 +120,8 @@ int disco_open(struct inode *inode, struct file *filp) {
     if (readers_pend == NULL){
       printk("<1>In disco_open write primer if\n");
       p = (Pipe*) kmalloc(sizeof(Pipe*), GFP_KERNEL);
+      m_init(&(p->m));
+      c_init(&(p->c));
 
       /* Allocating buffer */
       p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
@@ -150,7 +150,7 @@ int disco_open(struct inode *inode, struct file *filp) {
       printk("<1>open for write successful\n");
     }
     else {
-      printk("<1>In disco_open write segundo if\n");
+      printk("<1>In disco_open write †segundo if\n");
       Pipe *p = readers_pend->p;
       readers_pend->listo = TRUE;
       readers_pend = readers_pend->prox;
@@ -168,6 +168,8 @@ int disco_open(struct inode *inode, struct file *filp) {
   else if (filp->f_mode & FMODE_READ) {
     if (writers_pend == NULL){
       p = kmalloc(sizeof(Pipe*), GFP_KERNEL);
+      m_init(&(p->m));
+      c_init(&(p->c));
 
       /* Allocating buffer */
       p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);

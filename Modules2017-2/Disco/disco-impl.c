@@ -33,6 +33,21 @@ struct file_operations disco_fops = {
   release: disco_release
 };
 
+typedef struct {
+  char *buffer;
+  int in, out, size;
+  KMutex mutex;
+  KCondition cond;
+  int ready;
+  int read;
+} *Pipe;
+
+typedef struct nodo {
+    char *nombre, *pareja;
+    int listo;
+    struct nodo *prox;
+} Nodo;
+
 /* Declaration of the init and exit functions */
 module_init(disco_init);
 module_exit(disco_exit);
@@ -49,11 +64,10 @@ int disco_major = 61;     /* Major number */
 /* Buffer to store data */
 #define MAX_SIZE 8192
 
-static char *disco_buffer;
-static ssize_t curr_size;
-static int readers;
-static int writing;
-static int pend_open_write;
+static int open_readers;
+static int open_writers;
+static Nodo readers_pend;
+static Nodo writers_pend;
 
 /* El mutex y la condicion para disco */
 static KMutex mutex;
@@ -70,22 +84,9 @@ int disco_init(void) {
     return rc;
   }
 
-  readers= 0;
-  writing= FALSE;
-  pend_open_write= 0;
-  curr_size= 0;
   m_init(&mutex);
   c_init(&cond);
 
-  /* Allocating disco_buffer */
-  disco_buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
-  if (disco_buffer==NULL) {
-    disco_exit();
-    return -ENOMEM;
-  }
-  memset(disco_buffer, 0, MAX_SIZE);
-
-  printk("<1>Inserting disco module\n");
   return 0;
 }
 
@@ -103,40 +104,61 @@ void disco_exit(void) {
 
 int disco_open(struct inode *inode, struct file *filp) {
   int rc= 0;
-  m_lock(&mutex);
 
+  Pipe pipe = (Pipe)nMalloc(sizeof(pipe));
+
+  /* Allocating disco_buffer */
+  pipe->disco_buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
+  if (disco_buffer==NULL) {
+    disco_exit();
+    return -ENOMEM;
+  }
+  memset(pipe->disco_buffer, 0, MAX_SIZE);
+
+  pipe->size = 0;
+  pipe->ready = FALSE;
+
+  printk("<1>Inserting disco module\n");
+  m_lock(mutex);
+
+  /*Si es un escritor debe esperar un lector*/
   if (filp->f_mode & FMODE_WRITE) {
     int rc;
     printk("<1>open request for write\n");
     /* Se debe esperar hasta que no hayan otros lectores o escritores */
-    pend_open_write++;
-    while (writing || readers>0) {
+    writers++;
+    filp->private_data = pipe;
+    while (readers==0) {
       if (c_wait(&cond, &mutex)) {
-        pend_open_write--;
+      	writers--;
         c_broadcast(&cond);
         rc= -EINTR;
         goto epilog;
       }
     }
-    writing= TRUE;
-    pend_open_write--;
-    curr_size= 0;
+    writers--;
+    (filp->private_data)->size= 0;
     c_broadcast(&cond);
     printk("<1>open for write successful\n");
   }
+  /*Si es un lector debe esperar un escritor*/
   else if (filp->f_mode & FMODE_READ) {
     /* Para evitar la hambruna de los escritores, si nadie esta escribiendo
      * pero hay escritores pendientes (esperan porque readers>0), los
      * nuevos lectores deben esperar hasta que todos los lectores cierren
      * el dispositivo e ingrese un nuevo escritor.
      */
-    while (!writing && pend_open_write>0) {
+  	readers++;
+    while (readers==0) {
       if (c_wait(&cond, &mutex)) {
+      	readers--;
         rc= -EINTR;
         goto epilog;
       }
     }
-    readers++;
+    readers--;
+    (filp->private_data)->size= 0;
+    c_broadcast(&cond);
     printk("<1>open for read\n");
   }
 
@@ -158,8 +180,6 @@ typedef struct nodo {
 
 Nodo *hombres = NULL;
 Nodo *mujeres = NULL;
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
 void emparejar(char sexo, char *nombre, char *pareja)
 {
@@ -206,14 +226,12 @@ int disco_release(struct inode *inode, struct file *filp) {
   m_lock(&mutex);
 
   if (filp->f_mode & FMODE_WRITE) {
-    writing= FALSE;
     c_broadcast(&cond);
     printk("<1>close for write successful\n");
   }
   else if (filp->f_mode & FMODE_READ) {
     readers--;
-    if (readers==0)
-      c_broadcast(&cond);
+    c_broadcast(&cond);
     printk("<1>close for read (readers remaining=%d)\n", readers);
   }
 
@@ -224,27 +242,29 @@ int disco_release(struct inode *inode, struct file *filp) {
 ssize_t disco_read(struct file *filp, char *buf,
                     size_t count, loff_t *f_pos) {
   ssize_t rc;
-  m_lock(&mutex);
-
-  while (curr_size <= *f_pos && writing) {
+  Pipe p = filp->private_data;
+  KMutex m = p->mutex;
+  KCondition c = p->cond;
+  m_lock(&m);
+  while (p->size <= *f_pos && writers > 0) {
     /* si el lector esta en el final del archivo pero hay un proceso
      * escribiendo todavia en el archivo, el lector espera.
      */
-    if (c_wait(&cond, &mutex)) {
+    if (c_wait(&c, &m)) {
       printk("<1>read interrupted\n");
       rc= -EINTR;
       goto epilog;
     }
   }
 
-  if (count > curr_size-*f_pos) {
-    count= curr_size-*f_pos;
+  if (count > p->size-*f_pos) {
+    count= p->size-*f_pos;
   }
 
   printk("<1>read %d bytes at %d\n", (int)count, (int)*f_pos);
 
   /* Transfiriendo datos hacia el espacio del usuario */
-  if (copy_to_user(buf, disco_buffer+*f_pos, count)!=0) {
+  if (copy_to_user(buf, p->buffer+*f_pos, count)!=0) {
     /* el valor de buf es una direccion invalida */
     rc= -EFAULT;
     goto epilog;
@@ -254,7 +274,7 @@ ssize_t disco_read(struct file *filp, char *buf,
   rc= count;
 
 epilog:
-  m_unlock(&mutex);
+  m_unlock(&m);
   return rc;
 }
 
@@ -262,8 +282,10 @@ ssize_t disco_write( struct file *filp, const char *buf,
                       size_t count, loff_t *f_pos) {
   ssize_t rc;
   loff_t last;
-
-  m_lock(&mutex);
+  Pipe p = filp->private_data;
+  KMutex m = p->mutex;
+  KCondition c = p->cond;
+  m_lock(&m);
 
   last= *f_pos + count;
   if (last>MAX_SIZE) {
@@ -272,18 +294,18 @@ ssize_t disco_write( struct file *filp, const char *buf,
   printk("<1>write %d bytes at %d\n", (int)count, (int)*f_pos);
 
   /* Transfiriendo datos desde el espacio del usuario */
-  if (copy_from_user(disco_buffer+*f_pos, buf, count)!=0) {
+  if (copy_from_user(p->buffer+*f_pos, buf, count)!=0) {
     /* el valor de buf es una direccion invalida */
     rc= -EFAULT;
     goto epilog;
   }
 
   *f_pos += count;
-  curr_size= *f_pos;
+  p->size= *f_pos;
   rc= count;
-  c_broadcast(&cond);
+  c_broadcast(&c);
 
 epilog:
-  m_unlock(&mutex);
+  m_unlock(&m);
   return rc;
 }

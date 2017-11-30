@@ -44,7 +44,7 @@ typedef struct {
 
 typedef struct node {
     struct file *actual_file;
-    struct nodo *prox;
+    struct node *prox;
     int listo;
 } Node;
 

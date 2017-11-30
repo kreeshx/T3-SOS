@@ -181,7 +181,7 @@ int disco_open(struct inode *inode, struct file *filp) {
       p->size = 0;
 
       int rc;
-      printk("<1>open request for write\n");
+      printk("<1>open request for read\n");
       /* Se debe esperar hasta que no hayan otros lectores o escritores */
       filp->private_data = p;
 
@@ -199,7 +199,7 @@ int disco_open(struct inode *inode, struct file *filp) {
       }
       p->size= 0;
       c_broadcast(&cond);
-      printk("<1>open for write successful\n");
+      printk("<1>open for read successful\n");
     }
     else {
       Pipe *p = writers_pend->p;

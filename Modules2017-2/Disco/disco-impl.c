@@ -112,6 +112,8 @@ int disco_open(struct inode *inode, struct file *filp) {
 
   p = kmalloc(sizeof(Pipe*), GFP_KERNEL);
   m_lock(&mutex);
+  m_init(&m);
+  c_init(&c);
 
   if (filp->f_mode & FMODE_WRITE) {
     if (readers_pend == NULL){
@@ -119,8 +121,6 @@ int disco_open(struct inode *inode, struct file *filp) {
 
       p->mutex = m;
       p->cond = c;
-      m_init(&m);
-      c_init(&c);
 
       p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
       p->size = 0;
@@ -161,8 +161,6 @@ int disco_open(struct inode *inode, struct file *filp) {
 
       p->mutex = m;
       p->cond = c;
-      m_init(&m);
-      c_init(&c);
 
       p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
       p->size = 0;
@@ -204,11 +202,12 @@ epilog:
 
 int disco_release(struct inode *inode, struct file *filp) {
   Pipe *p;
+
   p = filp->private_data;
+
   m_lock(&(p->mutex));
 
   if (filp->f_mode & FMODE_WRITE) {
-    p = filp->private_data;
     writing = FALSE;
     c_broadcast(&(p->cond));
     printk("<1>close for write successful\n");
@@ -288,7 +287,7 @@ ssize_t disco_write( struct file *filp, const char *buf,
   }
 
   *f_pos += count;
-  p->size= *f_pos;
+  p->size = *f_pos;
   rc= count;
   c_broadcast(&(p->cond));
 

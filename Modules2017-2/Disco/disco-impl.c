@@ -120,8 +120,10 @@ int disco_open(struct inode *inode, struct file *filp) {
     if (readers_pend == NULL){
       printk("<1>In disco_open write primer if\n");
       p = (Pipe*) kmalloc(sizeof(Pipe*), GFP_KERNEL);
-      m_init(&(p->m));
-      c_init(&(p->c));
+      KMutex *m = p->mutex;
+      KCondition *c = p->cond; 
+      m_init(&m);
+      c_init(&c);
 
       /* Allocating buffer */
       p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
@@ -170,7 +172,7 @@ int disco_open(struct inode *inode, struct file *filp) {
       p = kmalloc(sizeof(Pipe*), GFP_KERNEL);
       KMutex *m = p->mutex;
       KCondition *c = p->cond; 
-      m_init(&m;
+      m_init(&m);
       c_init(&c);
 
       /* Allocating buffer */

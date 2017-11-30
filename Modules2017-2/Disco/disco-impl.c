@@ -84,6 +84,9 @@ int disco_init(void) {
     return rc;
   }
 
+  writers = 0;
+  readers = 0;
+
   m_init(&mutex);
   c_init(&cond);
 

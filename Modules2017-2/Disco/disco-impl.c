@@ -211,18 +211,18 @@ int disco_release(struct inode *inode, struct file *filp) {
 
   printk("<1>Entra al release\n");
   p = (Pipe*) filp->private_data;
-  m_lock(&(p->mutex));
-
+  
   if (filp->f_mode & FMODE_WRITE) {
+    m_lock(&(p->mutex));
     p->writing = 0;
     c_broadcast(&(p->cond));
     printk("<1>close for write successful\n");
+    m_unlock(&(p->mutex));
   }
   else if (filp->f_mode & FMODE_READ) {
-    printk("<1>close for read\n");
+    printk("<1>close for read succesful\n");
   }
-
-  m_unlock(&(p->mutex));
+    
   return 0;
 }
 

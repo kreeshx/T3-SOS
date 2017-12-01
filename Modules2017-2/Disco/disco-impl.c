@@ -214,12 +214,11 @@ int disco_release(struct inode *inode, struct file *filp) {
   m_lock(&(p->mutex));
 
   if (filp->f_mode & FMODE_WRITE) {
-    p->writing = FALSE;
+    p->writing = 0;
     c_broadcast(&(p->cond));
     printk("<1>close for write successful\n");
   }
   else if (filp->f_mode & FMODE_READ) {
-    c_broadcast(&(p->cond));
     printk("<1>close for read\n");
   }
 

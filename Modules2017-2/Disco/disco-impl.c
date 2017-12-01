@@ -241,6 +241,7 @@ ssize_t disco_read(struct file *filp, char *buf,
   printk("<1>f_pos: %i\n", *f_pos);
   while ((p->size) <= *f_pos || !p->writing) {
     printk("<1>Espera en el read\n");
+    printk("<1>f_pos: %i\n", p->writing);
     /* si el lector esta en el final del archivo pero hay un proceso
      * escribiendo todavia en el archivo, el lector espera.
      */

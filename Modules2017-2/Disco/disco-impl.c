@@ -112,18 +112,16 @@ int disco_open(struct inode *inode, struct file *filp) {
   KCondition c;
 
   printk("<1>Entra al open\n");
-  p = kmalloc(sizeof(Pipe*), GFP_KERNEL);
+  p = (Pipe*) kmalloc(sizeof(Pipe), GFP_KERNEL);
   m_lock(&mutex);
-  m_init(&m);
-  c_init(&c);
+  m_init(&p->mutex);
+  c_init(&p->cond);
 
   if (filp->f_mode & FMODE_WRITE) {
     if (readers_pend == NULL){
       int rc;
 
       printk("<1>Open para el write, no hay reader\n");
-      p->mutex = m;
-      p->cond = c;
 
       p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
       p->size = 0;
@@ -133,7 +131,7 @@ int disco_open(struct inode *inode, struct file *filp) {
       /* Se debe esperar hasta que no hayan otros lectores o escritores */
       filp->private_data = p;
 
-      nodo = kmalloc(sizeof(Node*), GFP_KERNEL);
+      nodo = (Node*) kmalloc(sizeof(Node), GFP_KERNEL);
       nodo->p = p;
       nodo->listo = FALSE;
       nodo->prox = writers_pend;
@@ -142,6 +140,7 @@ int disco_open(struct inode *inode, struct file *filp) {
       while (!nodo->listo) {
         printk("<1>Espera al reader\n");
         if (c_wait(&cond, &mutex)) {
+          printk("<1>wrte wait interrupted\n");
           c_broadcast(&cond);
           rc= -EINTR;
           goto epilog;
@@ -177,7 +176,7 @@ int disco_open(struct inode *inode, struct file *filp) {
       /* Se debe esperar hasta que no hayan otros lectores o escritores */
       filp->private_data = p;
 
-      nodo = kmalloc(sizeof(Node*), GFP_KERNEL);
+      nodo = (Node*) kmalloc(sizeof(Node), GFP_KERNEL);
       nodo->p = p;
       nodo->listo = FALSE;
       nodo->prox = readers_pend;

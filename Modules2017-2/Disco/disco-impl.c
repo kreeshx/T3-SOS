@@ -251,6 +251,10 @@ ssize_t disco_read(struct file *filp, char *buf,
     }
   }
 
+  if (!(p->writing)){
+    return 0
+  }
+
   printk("<1>Termina de esperar en el read\n");
   if (count > (p->size)-*f_pos) {
     count= (p->size)-*f_pos;

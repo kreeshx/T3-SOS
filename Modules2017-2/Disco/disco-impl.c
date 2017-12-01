@@ -212,27 +212,23 @@ epilog:
 
 int disco_release(struct inode *inode, struct file *filp) {
   Pipe *p;
-  KMutex m;
-  KCondition c;
 
   printk("<1>Entra al release\n");
   p = (Pipe*) filp->private_data;
-  m = p->mutex;
-  c = p->cond;
-  m_lock(&m);
+  m_lock(&(p->mutex));
 
   if (filp->f_mode & FMODE_WRITE) {
     p->writing = FALSE;
-    c_broadcast(&c);
+    c_broadcast(&(p->cond));
     printk("<1>close for write successful\n");
   }
   else if (filp->f_mode & FMODE_READ) {
     if (readers_pend == NULL)
-      c_broadcast(&c);
+      c_broadcast(&(p->cond));
     printk("<1>close for read\n");
   }
 
-  m_unlock(&m);
+  m_unlock(&(p->mutex));
   return 0;
 }
 
@@ -240,14 +236,10 @@ ssize_t disco_read(struct file *filp, char *buf,
                     size_t count, loff_t *f_pos) {
   ssize_t rc;
   Pipe *p;
-  KMutex m;
-  KCondition c;
 
   printk("<1>Entra en el read\n");
   p = (Pipe*) filp->private_data;
-  m = p->mutex;
-  c = p->cond;
-  m_lock(&m);
+  m_lock(&(p->mutex));
 
   printk("<1>size: %i\n", p->size);
   printk("<1>f_pos: %i\n", *f_pos);
@@ -256,7 +248,7 @@ ssize_t disco_read(struct file *filp, char *buf,
     /* si el lector esta en el final del archivo pero hay un proceso
      * escribiendo todavia en el archivo, el lector espera.
      */
-    if (c_wait(&c, &m)) {
+    if (c_wait(&(p->cond), &(p->mutex))) {
       printk("<1>read interrupted\n");
       rc= -EINTR;
       goto epilog;
@@ -283,7 +275,7 @@ ssize_t disco_read(struct file *filp, char *buf,
   printk("<1>Termine de leer\n");
 
 epilog:
-  m_unlock(&m);
+  m_unlock(&(p->mutex));
   return rc;
 }
 
@@ -292,14 +284,10 @@ ssize_t disco_write( struct file *filp, const char *buf,
   ssize_t rc;
   loff_t last;
   Pipe *p;
-  KMutex m;
-  KCondition c;
 
   printk("<1>Entra el write\n");
   p = (Pipe*) filp->private_data;
-  m = p->mutex;
-  c = p->cond;
-  m_lock(&m);
+  m_lock(&(p->mutex));
 
   last= *f_pos + count;
   if (last>MAX_SIZE) {
@@ -318,10 +306,10 @@ ssize_t disco_write( struct file *filp, const char *buf,
   *f_pos += count;
   p->size = *f_pos;
   rc= count;
-  c_broadcast(&c);
+  c_broadcast(&(p->cond));
   printk("<1>Termine de escribir\n");
 
 epilog:
-  m_unlock(&m);
+  m_unlock(&(p->mutex));
   return rc;
 }

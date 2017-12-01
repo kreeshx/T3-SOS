@@ -108,8 +108,6 @@ int disco_open(struct inode *inode, struct file *filp) {
   int rc= 0;
   Pipe *p;
   Node *nodo;
-  KMutex m;
-  KCondition c;
 
   printk("<1>Entra al open\n");
   p = (Pipe*) kmalloc(sizeof(Pipe), GFP_KERNEL);
@@ -165,8 +163,6 @@ int disco_open(struct inode *inode, struct file *filp) {
       int rc;
 
       printk("<1>Open para el reader, no hay writer\n");
-      p->mutex = m;
-      p->cond = c;
 
       p->buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
       p->size = 0;

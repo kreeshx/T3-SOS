@@ -217,7 +217,7 @@ int disco_release(struct inode *inode, struct file *filp) {
   KCondition c;
 
   printk("<1>Entra al release\n");
-  p = filp->private_data;
+  p = (Pipe*) filp->private_data;
   m = p->mutex;
   c = p->cond;
   m_lock(&m);
@@ -245,12 +245,14 @@ ssize_t disco_read(struct file *filp, char *buf,
   KCondition c;
 
   printk("<1>Entra en el read\n");
-  p = filp->private_data;
+  p = (Pipe*) filp->private_data;
   m = p->mutex;
   c = p->cond;
   m_lock(&m);
 
-  while ((p->size) <= *f_pos || writing) {
+  printk("<1>size: %i\n", p->size);
+  printk("<1>f_pos: %i\n", *f_pos);
+  while ((p->size) <= *f_pos || p->writing) {
     printk("<1>Espera en el read\n");
     /* si el lector esta en el final del archivo pero hay un proceso
      * escribiendo todavia en el archivo, el lector espera.
@@ -295,7 +297,7 @@ ssize_t disco_write( struct file *filp, const char *buf,
   KCondition c;
 
   printk("<1>Entra el write\n");
-  p = filp->private_data;
+  p = (Pipe*) filp->private_data;
   m = p->mutex;
   c = p->cond;
   m_lock(&m);
